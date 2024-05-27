@@ -1,0 +1,168 @@
+/*
+  Cadeira de Rodas Inteligente - Versão Aproximada
+  Este é apenas uma versão aproximada do código-fonte final.
+  O código-fonte final está sujeito a alterações para que a cadeira de rodas possa corresponder de acordo às necessidades.
+*/
+
+#include <SoftwareSerial.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Definições dos pinos
+const int voiceRxPin = 10;
+const int voiceTxPin = 11;
+const int btRxPin = 2;
+const int btTxPin = 3;
+const int motorLeftPwm = 5;
+const int motorLeftDir = 4;
+const int motorRightPwm = 6;
+const int motorRightDir = 7;
+const int batteryPin = A0;
+
+// Configuração do LCD
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Comunicação Serial para módulos de voz e Bluetooth
+SoftwareSerial voiceSerial(voiceRxPin, voiceTxPin);
+SoftwareSerial btSerial(btRxPin, btTxPin);
+
+// Variáveis
+int batteryLevel = 0;
+
+// Funções de Movimento
+void moveForward() {
+  digitalWrite(motorLeftDir, HIGH);
+  digitalWrite(motorRightDir, HIGH);
+  analogWrite(motorLeftPwm, 255);
+  analogWrite(motorRightPwm, 255);
+}
+
+void moveBackward() {
+  digitalWrite(motorLeftDir, LOW);
+  digitalWrite(motorRightDir, LOW);
+  analogWrite(motorLeftPwm, 255);
+  analogWrite(motorRightPwm, 255);
+}
+
+void turnLeft() {
+  digitalWrite(motorLeftDir, LOW);
+  digitalWrite(motorRightDir, HIGH);
+  analogWrite(motorLeftPwm, 255);
+  analogWrite(motorRightPwm, 255);
+}
+
+void turnRight() {
+  digitalWrite(motorLeftDir, HIGH);
+  digitalWrite(motorRightDir, LOW);
+  analogWrite(motorLeftPwm, 255);
+  analogWrite(motorRightPwm, 255);
+}
+
+void stopMotors() {
+  analogWrite(motorLeftPwm, 0);
+  analogWrite(motorRightPwm, 0);
+}
+
+// Função para exibir o nível da bateria
+void displayBatteryLevel(int level) {
+  float voltage = level * (5.0 / 1023.0) * 2; // Assumindo divisor de tensão para 24V
+  lcd.setCursor(0, 0);
+  lcd.print("Bateria: ");
+  lcd.print(voltage);
+  lcd.print("V");
+  delay(500);
+}
+
+// Função para processar comandos de voz
+void handleVoiceCommand(char command) {
+  switch (command) {
+    case 'F': // Frente
+      moveForward();
+      break;
+    case 'B': // Tras
+      moveBackward();
+      break;
+    case 'L': // Esquerda
+      turnLeft();
+      break;
+    case 'R': // Direita
+      turnRight();
+      break;
+    case 'S': // Parar
+      stopMotors();
+      break;
+    default:
+      break;
+  }
+}
+
+// Função para processar comandos via Bluetooth
+void handleBluetoothCommand(char command) {
+  switch (command) {
+    case 'F': // Frente
+      moveForward();
+      break;
+    case 'B': // Tras
+      moveBackward();
+      break;
+    case 'L': // Esquerda
+      turnLeft();
+      break;
+    case 'R': // Direita
+      turnRight();
+      break;
+    case 'S': // Parar
+      stopMotors();
+      break;
+    default:
+      break;
+  }
+}
+
+// Função para processar comandos do MU Vision Sensor
+void handleFacialMovements() {
+  // Esta função deve ser implementada conforme a integração com o MU Vision Sensor
+  // Adicione aqui o código para ler os movimentos faciais do sensor e controlar os motores
+}
+
+void setup() {
+  // Inicializa a comunicação Serial
+  Serial.begin(9600);
+  voiceSerial.begin(9600);
+  btSerial.begin(9600);
+
+  // Configura os pinos dos motores
+  pinMode(motorLeftPwm, OUTPUT);
+  pinMode(motorLeftDir, OUTPUT);
+  pinMode(motorRightPwm, OUTPUT);
+  pinMode(motorRightDir, OUTPUT);
+
+  // Inicializa o LCD
+  lcd.begin();
+  lcd.backlight();
+
+  // Mensagem de boas-vindas
+  lcd.setCursor(0, 0);
+  lcd.print("Cadeira Intelig.");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  // Lê o nível da bateria
+  batteryLevel = analogRead(batteryPin);
+  displayBatteryLevel(batteryLevel);
+
+  // Verifica por comandos de voz
+  if (voiceSerial.available()) {
+    handleVoiceCommand(voiceSerial.read());
+  }
+
+  // Verifica por comandos via Bluetooth
+  if (btSerial.available()) {
+    handleBluetoothCommand(btSerial.read());
+  }
+
+  // Placeholder para processamento de movimentos faciais (integre o código do MU Vision Sensor aqui)
+  handleFacialMovements();
+}
